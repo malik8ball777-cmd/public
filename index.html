@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ROYAL OCEAN</title>
+  <style>
+    body {margin:0;font-family:Arial, sans-serif;background:linear-gradient(135deg,#f4f4f4,#e1f5fe);}
+    header {background:#0288d1;color:#fff;padding:20px;text-align:center;font-size:28px;font-weight:bold;}
+    #menu {width:240px;background:#01579b;color:white;height:100vh;padding-top:30px;position:fixed;left:0;top:0;}
+    #menu button {width:90%;margin:12px;padding:16px;border:none;background:#0288d1;color:white;border-radius:10px;cursor:pointer;font-size:18px;}
+    #menu button:hover {background:#039be5;}
+    #content {margin-left:260px;padding:30px;width:100%;}
+    .card {background:white;padding:25px;border-radius:15px;box-shadow:0 4px 10px rgba(0,0,0,0.15);margin-bottom:25px;}
+    input {width:95%;padding:14px;margin:12px 0;border-radius:8px;border:1px solid #ccc;font-size:16px;}
+    .btn {background:#0288d1;color:white;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;font-size:16px;}
+    .btn:hover {background:#0277bd;}
+    .hidden {display:none;}
+    .reqBox {border:1px solid #ccc;padding:10px;margin:10px 0;border-radius:8px;}
+  </style>
+</head>
+<body>
+<header>ROYAL OCEAN</header>
+
+<!-- LOGIN / SIGNUP -->
+<div id="loginPage" class="card" style="max-width:420px; margin:60px auto;">
+  <h2>Login / Sign Up</h2>
+  <input type="text" id="username" placeholder="Enter Username">
+  <input type="email" id="gmail" placeholder="Enter Gmail">
+  <input type="password" id="password" placeholder="Enter Password">
+  <input type="text" id="inviter" placeholder="Enter Inviter Name (Optional)">
+  <button class="btn" onclick="login()">Login / Sign Up</button>
+  <h3>Admin Login</h3>
+  <input type="email" id="adminEmail" placeholder="Admin Gmail">
+  <input type="password" id="adminPass" placeholder="Admin Password">
+  <button class="btn" onclick="adminLogin()">Admin Login</button>
+</div>
+
+<!-- USER APP -->
+<div id="mainApp" class="hidden">
+  <div id="menu">
+    <button onclick="showSection('profile')">Profile</button>
+    <button onclick="showSection('plan')">Plan</button>
+    <button onclick="showSection('deposit')">Deposit</button>
+    <button onclick="showSection('withdraw')">Withdraw</button>
+    <button onclick="showSection('team')">Team</button>
+    <button onclick="showSection('helpline')">Helpline</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+  <div id="content">
+    <div id="profile" class="card">
+      <h2>Profile</h2>
+      <p><b>Username:</b> <span id="displayUser"></span></p>
+      <p><b>Gmail:</b> <span id="displayGmail"></span></p>
+      <p><b>Balance:</b> <span id="balance">0</span> PKR</p>
+      <p><b>Plan Status:</b> <span id="planStatus">No Active Plan</span></p>
+      <p><b>Inviter:</b> <span id="inviterName">None</span></p>
+    </div>
+
+    <div id="plan" class="card hidden">
+      <h2>Plan</h2>
+      <p>Deposit 500 PKR and Earn 20 PKR daily for 30 days</p>
+      <button class="btn" onclick="buyPlan()">Buy Plan</button>
+      <p id="planMsg"></p>
+    </div>
+
+    <div id="deposit" class="card hidden">
+      <h2>Deposit</h2>
+      <p>Send money to JazzCash: <b>03228786546</b></p>
+      <input type="number" id="depAmount" placeholder="Enter Amount">
+      <input type="text" id="senderName" placeholder="Sender Name">
+      <input type="text" id="senderPhone" placeholder="Sender Phone">
+      <button class="btn" onclick="sendDeposit()">Send Deposit Request</button>
+      <p id="depositMsg"></p>
+    </div>
+
+    <div id="withdraw" class="card hidden">
+      <h2>Withdraw</h2>
+      <input type="number" id="withAmount" placeholder="Enter Amount">
+      <input type="text" id="withNumber" placeholder="Your JazzCash Number">
+      <button class="btn" onclick="sendWithdraw()">Send Withdraw Request</button>
+      <p id="withdrawMsg"></p>
+    </div>
+
+    <div id="team" class="card hidden">
+      <h2>Team</h2>
+      <p>Your Referral Link:</p>
+      <input type="text" id="refLink" readonly>
+      <button class="btn" onclick="copyRef()">Copy Link</button>
+      <p id="copyMsg"></p>
+    </div>
+
+    <div id="helpline" class="card hidden">
+      <h2>Helpline</h2>
+      <p>WhatsApp Channel: 
+        <a href="https://whatsapp.com/channel/0029Vb6Gx7LKWEKrxZVXWK0o" target="_blank">Join Here</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="hidden" style="padding:20px;">
+  <h2>Admin Panel</h2>
+  <h3>All Users</h3>
+  <div id="allUsers"></div>
+  <h3>Deposit Requests</h3>
+  <div id="depositRequests"></div>
+  <h3>Withdraw Requests</h3>
+  <div id="withdrawRequests"></div>
+  <button class="btn" onclick="logout()">Logout</button>
+</div>
+
+<script>
+let currentUser = null;
+let users = JSON.parse(localStorage.getItem("users")) || {};
+let depositRequests = JSON.parse(localStorage.getItem("depositRequests")) || [];
+let withdrawRequests = JSON.parse(localStorage.getItem("withdrawRequests")) || [];
+
+const ADMIN_EMAIL = "amiry12u@gmail.com";
+const ADMIN_PASSWORD = "AMIR131P";
+
+function saveData(){
+  localStorage.setItem("users", JSON.stringify(users));
+  localStorage.setItem("depositRequests", JSON.stringify(depositRequests));
+  localStorage.setItem("withdrawRequests", JSON.stringify(withdrawRequests));
+}
+
+function login(){
+  let user = document.getElementById("username").value;
+  let gmail = document.getElementById("gmail").value;
+  let pass = document.getElementById("password").value;
+  let inviter = document.getElementById("inviter").value || "None";
+
+  if(user===""||gmail===""||pass===""){alert("Fill all fields");return;}
+
+  if(!users[user]){
+    users[user] = {username:user,gmail:gmail,password:pass,balance:50,plan:false,inviter:inviter};
+    alert("Welcome "+user+"! You received 50 PKR registration bonus.");
+  } else {
+    if(users[user].password!==pass || users[user].gmail!==gmail){
+      alert("Wrong Gmail or Password");return;
+    }
+  }
+
+  currentUser = user;
+  saveData();
+
+  document.getElementById("displayUser").innerText = user;
+  document.getElementById("displayGmail").innerText = gmail;
+  document.getElementById("inviterName").innerText = users[user].inviter;
+  document.getElementById("balance").innerText = users[user].balance;
+  document.getElementById("planStatus").innerText = users[user].plan?"Active":"No Active Plan";
+  document.getElementById("refLink").value = "https://earning-lab.github.io/advertising-/?ref=" + user;
+
+  document.getElementById("loginPage").classList.add("hidden");
+  document.getElementById("mainApp").classList.remove("hidden");
+}
+
+function logout(){location.reload();}
+
+function showSection(id){
+  document.querySelectorAll("#content .card").forEach(el=>el.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
+
+function copyRef(){
+  let ref = document.getElementById("refLink");
+  ref.select();navigator.clipboard.writeText(ref.value);
+  document.getElementById("copyMsg").innerText = "Referral link copied!";
+}
+
+function buyPlan(){
+  if(users[currentUser].balance>=500){
+    users[currentUser].balance -= 500;
+    users[currentUser].plan = true;
+    document.getElementById("planMsg").innerText="Plan Purchased Successfully!";
+    saveData();
+  } else {
+    document.getElementById("planMsg").innerText="Insufficient Balance!";
+  }
+}
+
+function sendDeposit(){
+  let amt=document.getElementById("depAmount").value;
+  let name=document.getElementById("senderName").value;
+  let phone=document.getElementById("senderPhone").value;
+  if(amt===""||name===""||phone===""){alert("Fill all deposit details");return;}
+  depositRequests.push({user:currentUser,amount:amt,sender:name,phone:phone});
+  saveData();
+  document.getElementById("depositMsg").innerText="✅ Deposit request sent successfully!";
+}
+
+function sendWithdraw(){
+  let amt=document.getElementById("withAmount").value;
+  let num=document.getElementById("withNumber").value;
+  if(amt===""||num===""){alert("Fill all withdraw details");return;}
+  withdrawRequests.push({user:currentUser,amount:amt,number:num});
+  saveData();
+  document.getElementById("withdrawMsg").innerText="✅ Withdraw request sent successfully!";
+}
+
+function adminLogin(){
+  let email=document.getElementById("adminEmail").value;
+  let pass=document.getElementById("adminPass").value;
+  if(email===ADMIN_EMAIL && pass===ADMIN_PASSWORD){
+    document.getElementById("loginPage").classList.add("hidden");
+    document.getElementById("adminPanel").classList.remove("hidden");
+    loadAdminData();
+  } else {alert("Invalid Admin Credentials!");}
+}
+
+function loadAdminData(){
+  let allDiv=document.getElementById("allUsers");
+  allDiv.innerHTML="";
+  for(let u in users){
+    let usr=users[u];
+    allDiv.innerHTML+=`<div class='reqBox'><b>${usr.username}</b><br>Gmail: ${usr.gmail}<br>Balance: ${usr.balance}<br>Plan: ${usr.plan?"Active":"No"}</div>`;
+  }
+  let depDiv=document.getElementById("depositRequests");
+  depDiv.innerHTML="";
+  depositRequests.forEach(r=>{
+    depDiv.innerHTML+=`<div class='reqBox'><b>User:</b>${r.user}<br>Amount:${r.amount}<br>Sender:${r.sender}<br>Phone:${r.phone}</div>`;
+  });
+  let withDiv=document.getElementById("withdrawRequests");
+  withDiv.innerHTML="";
+  withdrawRequests.forEach(r=>{
+    withDiv.innerHTML+=`<div class='reqBox'><b>User:</b>${r.user}<br>Amount:${r.amount}<br>Number:${r.number}</div>`;
+  });
+}
+</script>
+</body>
+</html>
